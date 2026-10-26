@@ -1,69 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import AppHeader from '../components/AppHeader';
 import { 
   Plus, 
   FolderOpen, 
-  LayoutTemplate, 
   Sparkles, 
   Play, 
-  MoreVertical,
+  Trash2,
   SlidersHorizontal,
   Flame,
-  Film
+  Film,
+  UploadCloud
 } from 'lucide-react';
+import { getAllProjects, deleteProject } from '../utils/storage';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [projects, setProjects] = useState([]);
 
-  const projects = [
-    {
-      id: 'travel-vlog',
-      title: 'Travel Vlog',
-      duration: '00:12:34',
-      updatedAt: '2 hours ago',
-      resolution: '4K · 60fps',
-      aspect: '16:9',
-      thumbnail: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=600',
-    },
-    {
-      id: 'cinematic-edit',
-      title: 'Cinematic Edit',
-      duration: '00:03:21',
-      updatedAt: '1 day ago',
-      resolution: '1080p · 24fps',
-      aspect: '21:9',
-      thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=600',
-    },
-    {
-      id: 'product-video',
-      title: 'Product Video',
-      duration: '00:00:58',
-      updatedAt: '2 days ago',
-      resolution: '1080p · 30fps',
-      aspect: '9:16',
-      thumbnail: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=600',
-    },
-    {
-      id: 'family-moments',
-      title: 'Family Moments',
-      duration: '00:05:12',
-      updatedAt: '4 days ago',
-      resolution: '1080p · 30fps',
-      aspect: '16:9',
-      thumbnail: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=600',
-    },
-  ];
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const stored = await getAllProjects();
+        if (stored && stored.length > 0) {
+          setProjects(stored);
+        } else {
+          // Default starter project if none created yet
+          const defaultProjects = [
+            {
+              id: 'proj_travel_vlog',
+              name: 'Travel Vlog',
+              duration: '00:12:34',
+              updatedAt: '2 hours ago',
+              resolution: '1920 × 1080 (Full HD)',
+              fps: '30 FPS',
+              aspect: '16:9',
+              thumbnail: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=600',
+            },
+            {
+              id: 'proj_cinematic',
+              name: 'Cinematic Edit',
+              duration: '00:03:21',
+              updatedAt: '1 day ago',
+              resolution: '2560 × 1080 (Ultrawide)',
+              fps: '24 FPS',
+              aspect: '21:9',
+              thumbnail: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=600',
+            },
+          ];
+          setProjects(defaultProjects);
+        }
+      } catch {
+        setProjects([]);
+      }
+    }
+    fetchProjects();
+  }, []);
 
-  const filteredProjects = projects.filter((p) =>
-    p.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (confirm('Delete this project?')) {
+      await deleteProject(id);
+      setProjects(prev => prev.filter(p => p.id !== id));
+    }
+  };
 
-  const handleOpenProject = (_project) => {
+  const handleOpenProject = (project) => {
+    localStorage.setItem('active_project_id', project.id);
+    localStorage.setItem('active_project_name', project.name);
     navigate('/editor');
   };
+
+  const filteredProjects = projects.filter((p) =>
+    (p.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[#0d0e12] text-white select-none overflow-hidden font-sans">
@@ -71,7 +83,7 @@ export default function Dashboard() {
       <AppHeader 
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Search projects, templates..."
+        searchPlaceholder="Search projects..."
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -82,9 +94,8 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar bg-[#0f1016]">
           <div className="max-w-6xl mx-auto space-y-7">
             
-            {/* Hero Banner */}
+            {/* Hero Banner (Mockup templates button removed!) */}
             <div className="relative w-full h-[270px] rounded-2xl overflow-hidden border border-[#242738] shadow-2xl group">
-              {/* Background mountain photo with smooth gradient overlay */}
               <img 
                 src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=85&w=1600" 
                 alt="Welcome banner" 
@@ -97,7 +108,7 @@ export default function Dashboard() {
               <div className="relative z-10 h-full p-8 flex flex-col justify-center">
                 <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-medium border border-blue-500/30 w-fit mb-3">
                   <Flame size={13} className="text-blue-400" />
-                  <span>Next-Gen Video Suite v2.4</span>
+                  <span>Pro Video Studio</span>
                 </div>
 
                 <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
@@ -108,10 +119,10 @@ export default function Dashboard() {
                 </h1>
 
                 <p className="text-sm text-gray-300 max-w-lg mb-6 leading-relaxed">
-                  Create amazing videos with professional tools, precision multi-track editing, and AI-powered smart features.
+                  Import your custom video, image, and audio files. Edit with precision multi-track timeline and AI tools.
                 </p>
 
-                {/* 4 Quick Action Buttons */}
+                {/* Quick Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
                   <button 
                     onClick={() => navigate('/new-project')}
@@ -122,19 +133,19 @@ export default function Dashboard() {
                   </button>
 
                   <button 
-                    onClick={() => navigate('/editor')}
+                    onClick={() => navigate('/media')}
                     className="flex items-center gap-2 bg-[#1b1d28]/90 hover:bg-[#252839] text-gray-200 px-4 py-2.5 rounded-xl font-medium text-xs transition-all border border-[#2b2f44] cursor-pointer"
                   >
-                    <FolderOpen size={15} />
-                    <span>Open Project</span>
+                    <UploadCloud size={15} />
+                    <span>Import Custom Media</span>
                   </button>
 
                   <button 
                     onClick={() => navigate('/editor')}
                     className="flex items-center gap-2 bg-[#1b1d28]/90 hover:bg-[#252839] text-gray-200 px-4 py-2.5 rounded-xl font-medium text-xs transition-all border border-[#2b2f44] cursor-pointer"
                   >
-                    <LayoutTemplate size={15} />
-                    <span>Create with Template</span>
+                    <FolderOpen size={15} />
+                    <span>Open Editor</span>
                   </button>
 
                   <button 
@@ -152,15 +163,15 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center justify-between mb-3.5">
                 <div>
-                  <h2 className="text-base font-bold text-white tracking-wide">Recent Projects</h2>
-                  <p className="text-[11px] text-gray-400">Continue where you left off</p>
+                  <h2 className="text-base font-bold text-white tracking-wide">My Projects</h2>
+                  <p className="text-[11px] text-gray-400">Continue editing your projects</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => navigate('/media')}
+                    onClick={() => navigate('/new-project')}
                     className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors cursor-pointer"
                   >
-                    View All
+                    + New Project
                   </button>
                 </div>
               </div>
@@ -175,15 +186,22 @@ export default function Dashboard() {
                   >
                     {/* Thumbnail box */}
                     <div className="relative aspect-video w-full overflow-hidden bg-[#0c0d11]">
-                      <img 
-                        src={project.thumbnail} 
-                        alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                      />
+                      {project.thumbnail ? (
+                        <img 
+                          src={project.thumbnail} 
+                          alt={project.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#171822] text-gray-500">
+                          <Film size={28} className="mb-1 text-gray-600" />
+                          <span className="text-[10px]">{project.aspect || '16:9'}</span>
+                        </div>
+                      )}
 
                       {/* Aspect Ratio Badge */}
                       <span className="absolute top-2 left-2 text-[10px] font-semibold bg-black/60 backdrop-blur-sm text-gray-200 px-2 py-0.5 rounded border border-white/10">
-                        {project.aspect}
+                        {project.aspect || '16:9'}
                       </span>
 
                       {/* Play overlay on hover */}
@@ -192,31 +210,27 @@ export default function Dashboard() {
                           <Play size={18} className="fill-black ml-0.5" />
                         </div>
                       </div>
-
-                      {/* Duration stamp */}
-                      <div className="absolute bottom-2 right-2 text-[10px] font-mono bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-white border border-white/10">
-                        {project.duration}
-                      </div>
                     </div>
 
                     {/* Metadata */}
                     <div className="p-3">
                       <div className="flex items-start justify-between gap-1 mb-1">
                         <h3 className="text-xs font-semibold text-gray-100 group-hover:text-white truncate">
-                          {project.title}
+                          {project.name}
                         </h3>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); }}
-                          className="text-gray-500 hover:text-gray-300 p-0.5"
+                          onClick={(e) => handleDelete(project.id, e)}
+                          className="text-gray-500 hover:text-red-400 p-0.5 transition-colors"
+                          title="Delete Project"
                         >
-                          <MoreVertical size={13} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-gray-400">
-                        <span>{project.duration}</span>
+                        <span>{project.resolution ? project.resolution.split(' ')[0] : '1080p'}</span>
                         <span>·</span>
-                        <span>{project.updatedAt}</span>
+                        <span>{project.updatedAt || 'Recent'}</span>
                       </div>
                     </div>
                   </div>
@@ -224,10 +238,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Quick Navigation Cards to all Editor Features */}
+            {/* Quick Navigation Cards */}
             <div className="pt-2 border-t border-[#1f2231]">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-3">
-                Explore Studio Tools
+                Workspace Tools
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <button 
@@ -235,8 +249,8 @@ export default function Dashboard() {
                   className="p-3.5 rounded-xl bg-[#15161f] border border-[#232534] hover:border-blue-500/50 text-left transition-all group cursor-pointer"
                 >
                   <Film size={18} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
-                  <div className="text-xs font-semibold text-white">Full Video Editor</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">Multi-track timeline & grading</div>
+                  <div className="text-xs font-semibold text-white">Main Video Editor</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Timeline & playback</div>
                 </button>
 
                 <button 
@@ -244,8 +258,8 @@ export default function Dashboard() {
                   className="p-3.5 rounded-xl bg-[#15161f] border border-[#232534] hover:border-blue-500/50 text-left transition-all group cursor-pointer"
                 >
                   <FolderOpen size={18} className="text-indigo-400 mb-2 group-hover:scale-110 transition-transform" />
-                  <div className="text-xs font-semibold text-white">Media Library</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">Clips, audio, images & bins</div>
+                  <div className="text-xs font-semibold text-white">Custom Media Library</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Import and save your files</div>
                 </button>
 
                 <button 
@@ -254,7 +268,7 @@ export default function Dashboard() {
                 >
                   <Sparkles size={18} className="text-pink-400 mb-2 group-hover:scale-110 transition-transform" />
                   <div className="text-xs font-semibold text-white">Effects & Transitions</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">Cinematic shaders & blurs</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Cinematic filters & blurs</div>
                 </button>
 
                 <button 
@@ -263,7 +277,7 @@ export default function Dashboard() {
                 >
                   <SlidersHorizontal size={18} className="text-cyan-400 mb-2 group-hover:scale-110 transition-transform" />
                   <div className="text-xs font-semibold text-white">Captions & Audio Mixer</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">AI subtitle sync & master faders</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">AI subtitles & master audio</div>
                 </button>
               </div>
             </div>

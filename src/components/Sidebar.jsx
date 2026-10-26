@@ -2,11 +2,9 @@ import {
   Home, 
   FolderPlus, 
   FolderOpen, 
-  LayoutTemplate, 
   Sparkles, 
   Settings as SettingsIcon, 
   Folder, 
-  Share2, 
   Trash2,
   Video
 } from 'lucide-react';
@@ -20,13 +18,12 @@ export default function Sidebar({ activeItem = 'Home' }) {
     { id: 'Home', icon: Home, label: 'Home', path: '/' },
     { id: 'New Project', icon: FolderPlus, label: 'New Project', path: '/new-project' },
     { id: 'Open Project', icon: FolderOpen, label: 'Open Project', path: '/editor' },
-    { id: 'Templates', icon: LayoutTemplate, label: 'Templates', path: '/editor' },
     { id: 'AI Tools', icon: Sparkles, label: 'AI Tools', path: '/captions' },
   ];
 
   const recentNav = [
-    { id: 'My Projects', icon: Folder, label: 'My Projects', count: 12, path: '/editor' },
-    { id: 'Shared with me', icon: Share2, label: 'Shared with me', count: 3, path: '/media' },
+    { id: 'My Projects', icon: Folder, label: 'My Projects', path: '/' },
+    { id: 'Media Library', icon: FolderOpen, label: 'Media Library', path: '/media' },
     { id: 'Trash', icon: Trash2, label: 'Trash', path: '/media' },
   ];
 
@@ -83,7 +80,7 @@ export default function Sidebar({ activeItem = 'Home' }) {
         {/* Recent Projects Submenu */}
         <div className="mt-6 px-3">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2 px-2">
-            Recent Projects
+            Storage & Files
           </div>
           <div className="space-y-0.5">
             {recentNav.map((item) => (
@@ -96,11 +93,6 @@ export default function Sidebar({ activeItem = 'Home' }) {
                   <item.icon size={14} className="text-gray-400" />
                   <span>{item.label}</span>
                 </div>
-                {item.count && (
-                  <span className="text-[10px] bg-[#1d1f2b] text-gray-400 px-1.5 py-0.2 rounded-full border border-[#262837]">
-                    {item.count}
-                  </span>
-                )}
               </button>
             ))}
           </div>

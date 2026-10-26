@@ -1,29 +1,35 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Monitor, 
   Square, 
-  Sliders, 
   HardDrive, 
   Video,
   X,
   Minus,
-  ArrowLeft
+  ArrowLeft,
+  UploadCloud,
+  Check
 } from 'lucide-react';
+import { saveProject, saveMediaFile } from '../utils/storage';
 
 export default function NewProject() {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState('Project Setup');
-  const [projectName, setProjectName] = useState('My Awesome Project');
-  const [savePath, setSavePath] = useState('C:\\Users\\anujkattel\\Videos\\Projects');
-  const [aspectRatio, setAspectRatio] = useState('9:16');
-  const [resolution, setResolution] = useState('1080 × 1920 (Full HD)');
-  const [fps, setFps] = useState('30 FPS');
+  const fileInputRef = useRef(null);
 
+  const [activeStep, setActiveStep] = useState('Project Setup');
+  const [projectName, setProjectName] = useState('My Video Project');
+  const [savePath, setSavePath] = useState('C:\\Users\\anujkattel\\Videos\\Projects');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [resolution, setResolution] = useState('1920 × 1080 (Full HD)');
+  const [fps, setFps] = useState('30 FPS');
+  const [initialFiles, setInitialFiles] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Steps without mock templates
   const steps = [
     { id: 'Project Setup', icon: Monitor },
-    { id: 'Aspect Ratio', icon: Monitor },
-    { id: 'Presets', icon: Sliders },
+    { id: 'Aspect Ratio', icon: Square },
     { id: 'Storage', icon: HardDrive },
   ];
 
@@ -40,9 +46,36 @@ export default function NewProject() {
     setResolution(ar.res);
   };
 
-  const handleCreate = () => {
-    // Navigate straight to the Main Editor screen
-    navigate('/editor');
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      setInitialFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleCreate = async () => {
+    setIsSaving(true);
+    try {
+      // Save any initial user files into storage
+      for (const file of initialFiles) {
+        await saveMediaFile(file);
+      }
+
+      // Save project
+      const newProj = await saveProject({
+        name: projectName || 'Untitled Project',
+        aspect: aspectRatio,
+        resolution,
+        fps,
+      });
+
+      localStorage.setItem('active_project_id', newProj.id);
+      localStorage.setItem('active_project_name', newProj.name);
+      navigate('/editor');
+    } catch {
+      navigate('/editor');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -100,7 +133,7 @@ export default function NewProject() {
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer ${
                   isActive 
                     ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b24]'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1c24]'
                 }`}
               >
                 <step.icon size={14} className={isActive ? 'text-blue-400' : 'text-gray-500'} />
@@ -119,7 +152,7 @@ export default function NewProject() {
               {/* Header */}
               <div>
                 <h1 className="text-xl font-bold text-white mb-1">Create New Project</h1>
-                <p className="text-xs text-gray-400">Set up your project settings to get started.</p>
+                <p className="text-xs text-gray-400">Set up your workspace and import your custom media files.</p>
               </div>
 
               {/* Project Name */}
@@ -198,6 +231,34 @@ export default function NewProject() {
                 </div>
               </div>
 
+              {/* Custom Media Upload Section */}
+              <div>
+                <label className="text-xs font-semibold text-gray-300 mb-1.5 block">
+                  Add Your Media Files (Optional)
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="video/*,image/*,audio/*"
+                  className="hidden"
+                />
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#2b2e40] hover:border-blue-500/70 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-[#141520]"
+                >
+                  <UploadCloud size={24} className="text-blue-400 mb-1.5" />
+                  <span className="text-xs font-semibold text-gray-200">Click to upload your custom video, image, or audio files</span>
+                  <span className="text-[10px] text-gray-500 mt-0.5">MP4, MOV, PNG, JPG, MP3, WAV (Saved directly to your local workspace)</span>
+                  {initialFiles.length > 0 && (
+                    <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
+                      <Check size={13} /> {initialFiles.length} file(s) selected
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Resolution & FPS */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -209,8 +270,8 @@ export default function NewProject() {
                     onChange={(e) => setResolution(e.target.value)}
                     className="w-full bg-[#171822] border border-[#282a3a] focus:border-blue-500 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
                   >
-                    <option value="1080 × 1920 (Full HD)">1080 × 1920 (Full HD)</option>
                     <option value="1920 × 1080 (Full HD)">1920 × 1080 (Full HD)</option>
+                    <option value="1080 × 1920 (Full HD)">1080 × 1920 (Full HD)</option>
                     <option value="3840 × 2160 (4K UHD)">3840 × 2160 (4K UHD)</option>
                     <option value="1280 × 720 (HD)">1280 × 720 (HD)</option>
                   </select>
@@ -243,9 +304,10 @@ export default function NewProject() {
               </button>
               <button 
                 onClick={handleCreate}
-                className="px-6 py-2 rounded-lg text-xs font-bold bg-white text-black hover:bg-gray-200 transition-all shadow-md active:scale-98 cursor-pointer"
+                disabled={isSaving}
+                className="px-6 py-2 rounded-lg text-xs font-bold bg-white text-black hover:bg-gray-200 transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50"
               >
-                Create Project
+                {isSaving ? 'Creating Project...' : 'Create Project'}
               </button>
             </div>
           </div>
@@ -266,11 +328,11 @@ export default function NewProject() {
                   height: aspectRatio === '9:16' ? '240px' : aspectRatio === '1:1' ? '160px' : aspectRatio === '4:3' ? '135px' : '112px',
                 }}
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=600" 
-                  alt="Mountain Preview" 
-                  className="w-full h-full object-cover opacity-80"
-                />
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#171824] text-gray-400 p-2 text-center">
+                  <Video size={24} className="text-blue-400 mb-1" />
+                  <span className="text-[10px] text-gray-300 font-semibold">{projectName}</span>
+                  <span className="text-[9px] text-gray-500">{aspectRatio}</span>
+                </div>
                 <span className="absolute bottom-2 right-2 text-[10px] font-mono font-bold bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-white border border-white/10">
                   {aspectRatio}
                 </span>
